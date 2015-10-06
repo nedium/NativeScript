@@ -242,6 +242,7 @@ export class TestBrokerViewModel extends observable.Observable {
                 //call eval indirectly to execute the scripts in the global scope
                 var geval = eval;
                 geval(script.contents);
+                this.completeLoading(script.url);
             }
         });
 
@@ -329,6 +330,30 @@ export class TestBrokerViewModel extends observable.Observable {
             if (!global.document.getElementById) {
                 global.document.getElementById = id => null;
             }
+        } else if (url.indexOf('qunit') !== -1) {
+            function amdDefine(f) {
+                global.QUnit = f();
+            }
+            amdDefine.amd = true;
+
+            global.window = {
+                Date: Date,
+                setTimeout: setTimeout,
+                clearTimeout: clearTimeout,
+                console: console,
+                detachEvent: function () { },
+                __karma__: __karma__,
+                QUnit: global.QUnit
+            };
+            global.window.window = global.window;
+            global.define = amdDefine;
+        }
+    }
+
+    private completeLoading(url: string) {
+        if (url.indexOf('qunit') !== -1) {
+            delete global.window;
+            delete global.define;
         }
     }
 }
